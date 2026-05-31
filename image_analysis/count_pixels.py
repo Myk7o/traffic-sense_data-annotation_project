@@ -2,7 +2,7 @@ import os
 import numpy as np
 from PIL import Image
 
-MASKS_ROOT = "/Volumes/PortableSSD/2026 Summer project /5classes_dataset"
+MASKS_ROOT = "path"
 
 CLASS_NAMES = {
     0: "background",
