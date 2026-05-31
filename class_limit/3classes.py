@@ -5,9 +5,9 @@ import numpy as np
 from PIL import Image
 from collections import defaultdict
 
-GTFINE_PATH  = "/Users/mykola/Downloads/gtFine_trainvaltest/gtFine"
-LEFTIMG_PATH = "/Users/mykola/Downloads/leftImg8bit_trainvaltest/leftImg8bit"
-OUTPUT_PATH  = "/Volumes/PortableSSD/2026 Summer project /cityscapes_3class"
+GTFINE_PATH  = "path"
+LEFTIMG_PATH = "path"
+OUTPUT_PATH  = "path"
 
 # background=0, car=1, person=2, cyclist=3
 # cyclist = bicycle(33) + motorcycle(32) + rider(25)
