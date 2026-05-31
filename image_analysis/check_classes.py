@@ -1,7 +1,7 @@
 import os
 import json
 
-GTFINE_PATH = "/Users/mykola/Downloads/gtFine_trainvaltest/gtFine"
+GTFINE_PATH = "path"
 
 TARGET = ["car", "traffic sign", "person", "vegetation", "traffic light"]
 
