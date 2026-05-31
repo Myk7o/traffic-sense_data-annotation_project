@@ -3,7 +3,7 @@ import json
 import numpy as np
 from PIL import Image
 
-GTFINE_PATH = "/Users/mykola/Downloads/gtFine_trainvaltest/gtFine"
+GTFINE_PATH = "path"
 
 # JSON label names grouped with their variants -> display name
 CLASS_GROUPS = {
