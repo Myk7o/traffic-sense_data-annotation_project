@@ -5,9 +5,9 @@ import numpy as np
 from PIL import Image
 from collections import defaultdict
 
-GTFINE_PATH   = "/Users/mykola/Downloads/gtFine_trainvaltest/gtFine"
-LEFTIMG_PATH  = "/Users/mykola/Downloads/leftImg8bit_trainvaltest/leftImg8bit"
-OUTPUT_PATH   = "/Volumes/PortableSSD/2026 Summer project /5classes_dataset"
+GTFINE_PATH   = "path"
+LEFTIMG_PATH  = "path"
+OUTPUT_PATH   = "path"
 
 # Official Cityscapes labelId → new sequential ID
 # background=0, car=1, person=2, vegetation=3, traffic sign=4, traffic light=5
