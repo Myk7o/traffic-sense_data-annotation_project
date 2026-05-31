@@ -12,10 +12,6 @@ Cyclist — bicycle riders, motorcyclists, and riders combined
 
 All other Cityscapes classes are merged into a single background class.
 Dataset
-This project uses the Cityscapes dataset. If you use this code in your research please cite:
-@inproceedings{Cordts2016Cityscapes,
-  title={The Cityscapes Dataset for Semantic Urban Scene Understanding},
-  author={Cordts, Marius and Omran, Mohamed and Ramos, Sebastian and Rehfeld, Timo and Enzweiler, Markus and Benenson, Rodrigo and Franke, Uwe and Roth, Stefan and Schiele, Bernt},
-  booktitle={Proc. of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year={2016}
-}
+
+Dataset:
+M. Cordts, M. Omran, S. Ramos, T. Rehfeld, M. Enzweiler, R. Benenson, U. Franke, S. Roth, and B. Schiele, “The Cityscapes Dataset for Semantic Urban Scene Understanding,” in Proc. of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016.
