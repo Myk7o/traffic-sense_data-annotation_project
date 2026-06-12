@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cityscapes Annotation Reviewer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#111827;color:#e5e7eb;height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+
+/* ── header ── */
+#hdr{background:#1f2937;padding:8px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #374151;flex-shrink:0}
+#hdr h1{font-size:14px;font-weight:700;color:#f87171;white-space:nowrap}
+#prog-wrap{flex:1;background:#374151;border-radius:999px;height:7px;overflow:hidden;min-width:60px}
+#prog-bar{height:100%;background:#f87171;width:0%;transition:width .4s}
+#prog-txt{font-size:11px;color:#9ca3af;white-space:nowrap}
+#reviewer{background:#374151;border:1px solid #f87171;color:#e5e7eb;padding:3px 8px;border-radius:5px;font-size:12px;width:130px}
+
+/* ── layout ── */
+#main{flex:1;display:flex;overflow:hidden}
+
+/* ── left panel ── */
+#left{width:210px;background:#1f2937;border-right:1px solid #374151;display:flex;flex-direction:column;flex-shrink:0}
+#srch{margin:7px;padding:5px 8px;background:#374151;border:1px solid #4b5563;color:#e5e7eb;border-radius:5px;font-size:11px}
+#img-list{flex:1;overflow-y:auto;font-size:11px}
+.img-row{padding:5px 10px;cursor:pointer;border-bottom:1px solid #1f293744;display:flex;justify-content:space-between;align-items:center;gap:4px}
+.img-row:hover{background:#374151}
+.img-row.active{background:#f87171;color:#fff}
+.img-row .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.img-row .badge{font-size:9px;background:#37415188;border-radius:3px;padding:1px 4px;flex-shrink:0}
+.img-row.active .badge{background:rgba(255,255,255,.25)}
+
+/* ── center ── */
+#center{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0b0f18}
+#vctrl{padding:7px 12px;background:#1f2937;border-bottom:1px solid #374151;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.btn{background:#374151;color:#e5e7eb;border:1px solid #4b5563;padding:4px 11px;border-radius:5px;cursor:pointer;font-size:11px}
+.btn:hover,.btn.on{background:#f87171;color:#fff;border-color:#f87171}
+#opa-wrap{display:flex;align-items:center;gap:7px;font-size:11px}
+#opa-slider{width:110px;accent-color:#f87171}
+
+#varea{flex:1;overflow:hidden;position:relative;cursor:grab}
+#varea:active{cursor:grabbing}
+#no-img{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#374151;font-size:15px;pointer-events:none}
+
+/* overlay mode */
+#ov-vp{position:absolute;inset:0;overflow:hidden;display:none}
+
+/* side-by-side mode */
+#sb-wrap{position:absolute;inset:0;display:none;gap:3px}
+.sb-vp{flex:1;overflow:hidden;position:relative}
+
+/* shared zoom container */
+.zc{position:relative;transform-origin:0 0;display:inline-block}
+.zc img{display:block;position:absolute;top:0;left:0}
+.zc canvas{display:block;position:absolute;top:0;left:0;pointer-events:none}
+
+/* ── right panel ── */
+#right{width:272px;background:#1f2937;border-left:1px solid #374151;display:flex;flex-direction:column;flex-shrink:0}
+#inst-list{flex:1;overflow-y:auto;padding:4px}
+.inst-row{padding:6px 8px;cursor:pointer;border-radius:5px;margin-bottom:2px;font-size:11px;display:flex;justify-content:space-between;align-items:center;border:1px solid transparent}
+.inst-row:hover{background:#374151}
+.inst-row.sel{border-color:#f87171;background:#374151}
+.inst-row.done{opacity:.5}
+.cls{font-weight:700}
+.cls.car{color:#60a5fa}.cls.person{color:#f9a8d4}.cls.cyclist{color:#fde68a}
+#rform{padding:11px;border-top:1px solid #374151;flex-shrink:0}
+#rform h3{font-size:12px;color:#9ca3af;margin-bottom:7px}
+#sel-info{font-size:11px;margin-bottom:8px;padding:6px 8px;background:#111827;border-radius:5px;color:#6b7280}
+.frow{margin-bottom:7px}
+.frow label{display:block;font-size:10px;color:#9ca3af;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.frow select,.frow textarea,.frow input{width:100%;background:#111827;border:1px solid #374151;color:#e5e7eb;padding:5px 7px;border-radius:5px;font-size:11px}
+.frow textarea{resize:vertical;min-height:44px}
+#fbtns{display:flex;gap:7px}
+#fbtns button{flex:1;padding:6px;border-radius:5px;cursor:pointer;font-size:12px;border:none;font-weight:600}
+#bsave{background:#f87171;color:#fff}
+#bsave:hover{background:#ef4444}
+#bskip{background:#374151;color:#9ca3af}
+#bskip:hover{background:#4b5563}
+
+/* ── missed instance ── */
+#mform{padding:11px;border-top:1px solid #374151;flex-shrink:0}
+#mform h3{font-size:12px;color:#fbbf24;margin-bottom:7px}
+#missed-desc{width:100%;background:#111827;border:1px solid #374151;color:#e5e7eb;padding:5px 7px;border-radius:5px;font-size:11px;resize:vertical;min-height:52px}
+#bmissed{width:100%;padding:6px;border-radius:5px;cursor:pointer;font-size:12px;border:none;font-weight:600;background:#d97706;color:#fff;margin-top:6px}
+#bmissed:hover{background:#b45309}
+#missed-ok{font-size:10px;color:#4ade80;margin-top:4px;display:none;text-align:center}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#111827}
+::-webkit-scrollbar-thumb{background:#374151;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <h1>Cityscapes Annotation Reviewer</h1>
+  <div id="prog-wrap"><div id="prog-bar"></div></div>
+  <span id="prog-txt">— reviewed</span>
+  <input id="reviewer" type="text" placeholder="Reviewer name" value="reviewer1">
+</div>
+
+<div id="main">
+
+  <!-- left -->
+  <div id="left">
+    <input id="srch" type="text" placeholder="Search images…">
+    <div id="img-list"></div>
+  </div>
+
+  <!-- center -->
+  <div id="center">
+    <div id="vctrl">
+      <button class="btn on" id="btn-ov"  onclick="setMode('overlay')">Overlay</button>
+      <button class="btn"    id="btn-sb"  onclick="setMode('sidebyside')">Side by Side</button>
+      <div id="opa-wrap">
+        <span>Opacity</span>
+        <input type="range" id="opa-slider" min="0" max="100" value="50" oninput="setOpacity(this.value)">
+        <span id="opa-val">50%</span>
+      </div>
+      <button class="btn" onclick="resetZoom()" style="margin-left:auto">Reset Zoom</button>
+    </div>
+
+    <div id="varea">
+      <div id="no-img">Select an image from the list</div>
+
+      <!-- overlay viewport -->
+      <div id="ov-vp">
+        <div class="zc" id="ov-zc">
+          <img id="ov-rgb" draggable="false">
+          <img id="ov-mask" draggable="false" style="opacity:.5">
+          <canvas id="ov-hl"></canvas>
+        </div>
+      </div>
+
+      <!-- side-by-side -->
+      <div id="sb-wrap" style="display:flex">
+        <div class="sb-vp" id="sb-l">
+          <div class="zc" id="sb-zc-l">
+            <img id="sb-rgb" draggable="false">
+            <canvas id="sb-hl-l"></canvas>
+          </div>
+        </div>
+        <div class="sb-vp" id="sb-r">
+          <div class="zc" id="sb-zc-r">
+            <img id="sb-mask" draggable="false">
+            <canvas id="sb-hl-r"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- right -->
+  <div id="right">
+    <div id="inst-list"><p style="padding:12px;color:#374151;font-size:11px">No image selected</p></div>
+    <div id="mform">
+      <h3>Missed Instance</h3>
+      <div class="frow">
+        <label>Description</label>
+        <textarea id="missed-desc" placeholder="Describe what instance was missed…"></textarea>
+      </div>
+      <button id="bmissed" onclick="saveMissed()">Report Missed Instance</button>
+      <div id="missed-ok">Saved ✓</div>
+    </div>
+    <div id="rform">
+      <h3>Review Instance</h3>
+      <div id="sel-info">No instance selected — click image to select</div>
+      <div class="frow">
+        <label>Quality</label>
+        <select id="q-sel">
+          <option value="">— select —</option>
+          <option value="fit">Fit</option>
+          <option value="under-annotated">Under-annotated</option>
+          <option value="over-annotated">Over-annotated</option>
+          <option value="mixed">Mixed</option>
+          <option value="skip">Skip</option>
+        </select>
+      </div>
+      <div class="frow">
+        <label>Parts affected</label>
+        <input type="text" id="parts" placeholder="e.g. wheels, feet, bike pedals">
+      </div>
+      <div class="frow">
+        <label>Notes</label>
+        <textarea id="notes" placeholder="Additional comments…"></textarea>
+      </div>
+      <div id="fbtns">
+        <button id="bsave" onclick="saveReview()">Save</button>
+        <button id="bskip" onclick="skipInstance()">Skip</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- main -->
+
+<script>
+// ── state ─────────────────────────────────────────────────────────────────────
+const S = {
+  mode: 'overlay',
+  tr: { x:0, y:0, scale:1 },
+  imgW: 2048, imgH: 1024,
+  cur: null,          // {split, city, base}
+  instances: [],
+  selInst: null,
+  drag: false,
+  dragStart: {x:0,y:0},
+  dragTr: {x:0,y:0},
+  moved: false,
+  opacity: 0.5,
+  allImages: [],
+};
+
+// ── dom refs ──────────────────────────────────────────────────────────────────
+const ovVp   = document.getElementById('ov-vp');
+const sbWrap = document.getElementById('sb-wrap');
+const ovZc   = document.getElementById('ov-zc');
+const sbZcL  = document.getElementById('sb-zc-l');
+const sbZcR  = document.getElementById('sb-zc-r');
+const ovRgb  = document.getElementById('ov-rgb');
+const ovMask = document.getElementById('ov-mask');
+const sbRgb  = document.getElementById('sb-rgb');
+const sbMask = document.getElementById('sb-mask');
+const ovHl   = document.getElementById('ov-hl');
+const sbHlL  = document.getElementById('sb-hl-l');
+const sbHlR  = document.getElementById('sb-hl-r');
+const varea  = document.getElementById('varea');
+const sbL    = document.getElementById('sb-l');
+const sbR    = document.getElementById('sb-r');
+
+// ── init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const res = await fetch('/api/images');
+  S.allImages = await res.json();
+  renderList(S.allImages);
+  loadProgress();
+  setupEvents();
+  setMode('overlay');
+  sbWrap.style.display = 'none';
+}
+
+// ── image list ────────────────────────────────────────────────────────────────
+function renderList(images) {
+  const q = document.getElementById('srch').value.toLowerCase();
+  const filtered = q ? images.filter(im => (im.city+im.base).toLowerCase().includes(q)) : images;
+  const ul = document.getElementById('img-list');
+  ul.innerHTML = '';
+  filtered.forEach(im => {
+    const d = document.createElement('div');
+    d.className = 'img-row' + (S.cur && S.cur.base === im.base ? ' active' : '');
+    const short = im.base.split('_').slice(-2).join('_');
+    d.innerHTML = `<span class="lbl" title="${im.split}/${im.city}/${im.base}">${im.city}/${short}</span>
+                   <span class="badge">${im.split}</span>`;
+    d.onclick = () => loadImage(im.split, im.city, im.base);
+    ul.appendChild(d);
+  });
+}
+document.getElementById('srch').addEventListener('input', () => renderList(S.allImages));
+
+async function loadProgress() {
+  const {reviewed, images} = await (await fetch('/api/progress')).json();
+  document.getElementById('prog-txt').textContent = `${reviewed} reviewed`;
+  document.getElementById('prog-bar').style.width = images ? (reviewed/images*100)+'%' : '0%';
+}
+
+// ── load image ────────────────────────────────────────────────────────────────
+async function loadImage(split, city, base) {
+  S.cur = {split, city, base};
+  document.getElementById('no-img').style.display = 'none';
+
+  const data = await (await fetch(`/api/image/${split}/${city}/${base}`)).json();
+  S.instances = data.instances;
+
+  const rgb  = `/serve/rgb/${split}/${city}/${base}`;
+  const mask = `/serve/mask/${split}/${city}/${base}`;
+  await Promise.all([
+    imgLoad(ovRgb, rgb), imgLoad(ovMask, mask),
+    imgLoad(sbRgb, rgb), imgLoad(sbMask, mask),
+  ]);
+
+  S.imgW = ovRgb.naturalWidth;
+  S.imgH = ovRgb.naturalHeight;
+  [ovHl, sbHlL, sbHlR].forEach(c => { c.width = S.imgW; c.height = S.imgH; });
+
+  resetZoom();
+  renderInstances();
+  S.selInst = null;
+  clearHl();
+  setSelInfo(null);
+  renderList(S.allImages);
+}
+
+function imgLoad(el, src) {
+  return new Promise(r => { el.onload = r; el.onerror = r; el.src = src; });
+}
+
+// ── instances ─────────────────────────────────────────────────────────────────
+const CLS_COLOR = {car:'#60a5fa', person:'#f9a8d4', cyclist:'#fde68a'};
+
+function renderInstances() {
+  const ul = document.getElementById('inst-list');
+  if (!S.instances.length) {
+    ul.innerHTML = '<p style="padding:12px;color:#374151;font-size:11px">No instances found</p>';
+    return;
+  }
+  ul.innerHTML = '';
+  S.instances.forEach(inst => {
+    const d = document.createElement('div');
+    d.className = 'inst-row' + (inst.reviewed?' done':'') + (S.selInst?.id===inst.id?' sel':'');
+    d.innerHTML = `
+      <span class="cls ${inst.class}">${inst.class}</span>
+      <span style="color:#6b7280;font-size:10px">#${inst.id} · ${(inst.pixels/1000).toFixed(0)}K px</span>
+      ${inst.reviewed ? '<span style="color:#4ade80;font-size:10px">✓</span>' : ''}`;
+    d.onclick = () => selectInst(inst);
+    ul.appendChild(d);
+  });
+}
+
+async function selectInst(inst) {
+  S.selInst = inst;
+  renderInstances();
+  setSelInfo(inst);
+
+  const {split, city, base} = S.cur;
+  const hlImg = new Image();
+  hlImg.onload = () => {
+    [ovHl, sbHlL, sbHlR].forEach(c => {
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.drawImage(hlImg,0,0);
+    });
+  };
+  hlImg.src = `/serve/highlight/${split}/${city}/${base}/${inst.id}`;
+
+  if (inst.reviewed && inst.review) {
+    document.getElementById('q-sel').value    = inst.review.quality_label || '';
+    document.getElementById('parts').value    = inst.review.parts_affected || '';
+    document.getElementById('notes').value    = inst.review.notes || '';
+  } else {
+    document.getElementById('q-sel').value = '';
+    document.getElementById('parts').value = '';
+    document.getElementById('notes').value = '';
+  }
+}
+
+function clearHl() {
+  [ovHl, sbHlL, sbHlR].forEach(c => c.getContext('2d').clearRect(0,0,c.width,c.height));
+}
+
+function setSelInfo(inst) {
+  const el = document.getElementById('sel-info');
+  if (!inst) { el.textContent = 'No instance selected — click image to select'; el.style.color='#6b7280'; return; }
+  el.innerHTML = `<b style="color:${CLS_COLOR[inst.class]}">${inst.class.toUpperCase()}</b>&nbsp;&nbsp;Instance #${inst.id}&nbsp;&nbsp;${inst.pixels.toLocaleString()} px`;
+  el.style.color = '#e5e7eb';
+}
+
+// ── image click ───────────────────────────────────────────────────────────────
+async function handleClick(e) {
+  if (S.moved || !S.cur) { S.moved = false; return; }
+  const rect = e.currentTarget.getBoundingClientRect();
+  const imgX = Math.round((e.clientX - rect.left  - S.tr.x) / S.tr.scale);
+  const imgY = Math.round((e.clientY - rect.top   - S.tr.y) / S.tr.scale);
+  const {split,city,base} = S.cur;
+  const data = await (await fetch(`/api/click/${split}/${city}/${base}?x=${imgX}&y=${imgY}`)).json();
+  if (data.instance_id >= 1000) {
+    const inst = S.instances.find(i => i.id === data.instance_id);
+    if (inst) selectInst(inst);
+  }
+}
+
+// ── zoom / pan ────────────────────────────────────────────────────────────────
+function setupEvents() {
+  varea.addEventListener('wheel', onWheel, {passive:false});
+  varea.addEventListener('pointerdown', onDown);
+  varea.addEventListener('pointermove', onMove);
+  varea.addEventListener('pointerup',   onUp);
+  varea.addEventListener('pointerleave',onUp);
+  ovVp.addEventListener('click', handleClick);
+  sbL.addEventListener('click',  handleClick);
+  sbR.addEventListener('click',  handleClick);
+}
+
+function onWheel(e) {
+  e.preventDefault();
+  const r = varea.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  const f = e.deltaY < 0 ? 1.15 : 0.87;
+  const ns = Math.max(0.05, Math.min(20, S.tr.scale * f));
+  const ratio = ns / S.tr.scale;
+  S.tr.x = mx - ratio*(mx - S.tr.x);
+  S.tr.y = my - ratio*(my - S.tr.y);
+  S.tr.scale = ns;
+  applyTr();
+}
+
+function onDown(e) {
+  if (e.button !== 0) return;
+  S.drag = true; S.moved = false;
+  S.dragStart = {x:e.clientX, y:e.clientY};
+  S.dragTr = {...S.tr};
+  varea.setPointerCapture(e.pointerId);
+}
+function onMove(e) {
+  if (!S.drag) return;
+  const dx = e.clientX-S.dragStart.x, dy = e.clientY-S.dragStart.y;
+  if (Math.abs(dx)>3||Math.abs(dy)>3) S.moved = true;
+  S.tr.x = S.dragTr.x + dx;
+  S.tr.y = S.dragTr.y + dy;
+  applyTr();
+}
+function onUp() { S.drag = false; }
+
+function applyTr() {
+  const t = `translate(${S.tr.x}px,${S.tr.y}px) scale(${S.tr.scale})`;
+  ovZc.style.transform = sbZcL.style.transform = sbZcR.style.transform = t;
+}
+
+function resetZoom() {
+  const r = varea.getBoundingClientRect();
+  const vpW = S.mode === 'sidebyside' ? r.width/2 - 2 : r.width;
+  const sc = Math.min(vpW / S.imgW, r.height / S.imgH) * 0.97;
+  S.tr = { x: (vpW - S.imgW*sc)/2, y: (r.height - S.imgH*sc)/2, scale: sc };
+  applyTr();
+}
+
+// ── mode / opacity ────────────────────────────────────────────────────────────
+function setMode(mode) {
+  S.mode = mode;
+  document.getElementById('btn-ov').classList.toggle('on', mode==='overlay');
+  document.getElementById('btn-sb').classList.toggle('on', mode==='sidebyside');
+  document.getElementById('opa-wrap').style.display = mode==='overlay' ? 'flex' : 'none';
+  ovVp.style.display   = mode==='overlay'    ? 'block' : 'none';
+  sbWrap.style.display = mode==='sidebyside' ? 'flex'  : 'none';
+  if (S.cur) { resetZoom(); applyTr(); }
+}
+
+function setOpacity(v) {
+  S.opacity = v/100;
+  ovMask.style.opacity = S.opacity;
+  document.getElementById('opa-val').textContent = v+'%';
+}
+
+// ── save / skip ───────────────────────────────────────────────────────────────
+async function saveReview() {
+  if (!S.selInst || !S.cur) { alert('Select an instance first'); return; }
+  const q = document.getElementById('q-sel').value;
+  if (!q) { alert('Select a quality label'); return; }
+  const {split,city,base} = S.cur;
+  await fetch('/api/save', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      split, city, base,
+      instance_id: String(S.selInst.id),
+      class: S.selInst.class,
+      quality_label: q,
+      parts_affected: document.getElementById('parts').value,
+      notes: document.getElementById('notes').value,
+      reviewer: document.getElementById('reviewer').value,
+    })
+  });
+  S.selInst.reviewed = true;
+  renderInstances();
+  loadProgress();
+  const next = S.instances.find(i => !i.reviewed);
+  if (next) { selectInst(next); }
+  else { clearHl(); S.selInst=null; setSelInfo(null); }
+}
+
+function skipInstance() {
+  if (!S.selInst) return;
+  const idx = S.instances.findIndex(i => i.id === S.selInst.id);
+  selectInst(S.instances[(idx+1) % S.instances.length]);
+}
+
+async function saveMissed() {
+  if (!S.cur) { alert('Select an image first'); return; }
+  const desc = document.getElementById('missed-desc').value.trim();
+  if (!desc) { alert('Enter a description of the missed instance'); return; }
+  const {split, city, base} = S.cur;
+  await fetch('/api/save_missed', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      split, city, base,
+      description: desc,
+      reviewer: document.getElementById('reviewer').value,
+    })
+  });
+  document.getElementById('missed-desc').value = '';
+  const ok = document.getElementById('missed-ok');
+  ok.style.display = 'block';
+  setTimeout(() => { ok.style.display = 'none'; }, 2000);
+}
+
+init();
+</script>
+</body>
+</html>
