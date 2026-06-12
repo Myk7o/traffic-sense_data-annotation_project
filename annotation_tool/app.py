@@ -6,10 +6,10 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-DATASET   = "/Volumes/PortableSSD/2026 Summer project /cityscapes_3class"
-GTFINE    = "/Users/mykola/Downloads/gtFine_trainvaltest/gtFine"
-CSV_PATH        = "/Volumes/PortableSSD/2026 Summer project /inspection_results.csv"
-MISSED_CSV_PATH = "/Volumes/PortableSSD/2026 Summer project /missed_instances.csv"
+DATASET   = "path"
+GTFINE    = "path"
+CSV_PATH        = "path/inspection_results.csv"
+MISSED_CSV_PATH = "path/missed_instances.csv"
 
 INST_CLASS = {24: "person", 25: "cyclist", 26: "car", 32: "cyclist", 33: "cyclist"}
 
